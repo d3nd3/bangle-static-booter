@@ -2,38 +2,27 @@ import requests
 import esprima
 import sys
 
-def diveIntoTreeClass(branch):
-    global bootCount
-    for obj in branch:
-        if type(obj) == esprima.nodes.ExpressionStatement:
-            if hasattr(obj,'expression'):
-                if hasattr(obj.expression,'left'):
-                    if hasattr(obj.expression.left,'name'):
-                        if obj.expression.left.name == "boot":
-                            print("found a boot!!")
-                            bootCount +=1
-                            break
-                
-
-def diveIntoTreeBodyList(branch):
-    # initially a list
-    for obj in syntaxTree:
-        if type(obj) == esprima.nodes.BlockStatement:
-            diveIntoTreeBodyList(obj.body)
-        else:
-            diveIntoTreeClass(branch)
-
+class MyVisitor(esprima.NodeVisitor):
+    def visit_ExpressionStatement(self, node):
+        global bootCount
+        if hasattr(node,'expression') and type(node.expression) == esprima.nodes.AssignmentExpression :
+            if hasattr(node.expression,'left'):
+                if hasattr(node.expression.left,'name'):
+                    if node.expression.left.name == "boot" and node.expression.operator == "+=":
+                        # print(node.expression)
+                        bootCount +=1
+        self.generic_visit(node)
 
 r = requests.get("https://raw.githubusercontent.com/espruino/BangleApps/master/apps/boot/bootupdate.js")
 # print(r.text)
 
 updateFile = r.text
-
-syntaxTree = esprima.parseScript(updateFile)
-
-syntaxTree = syntaxTree.body
+# syntaxTree = syntaxTree.body
 bootCount = 0
 
-diveIntoTreeBodyList(syntaxTree)
+visitor = MyVisitor()
+syntaxTree = esprima.parseScript(updateFile,delegate=visitor)
+visitedTree = visitor.visit(syntaxTree)
+print(visitedTree)
 
 print(f"boot count is {bootCount}")
