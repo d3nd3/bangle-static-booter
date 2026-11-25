@@ -1,0 +1,60 @@
+# bangle-static-booter — system overview
+# A 28-line abandoned experiment: count `boot +=` lines in BangleApps bootupdate.js.
+# Zones run left to right: entry points -> core -> state -> external.
+
+title: |md
+  # bangle-static-booter
+  A one-file attempt to inspect the Bangle.js boot file so the `if`s that stop it being overwritten could be restored. It fetches, parses and counts — it never writes anything back.
+| {near: top-center}
+
+direction: right
+grid-columns: 2
+grid-rows: 2
+horizontal-gap: 150
+vertical-gap: 100
+
+entry: Entry points {
+  direction: down
+
+  cli: `python generate.py` · no arguments, no options, no output file · the only way to run it
+  intent: `README.md` · one line about restoring `if`s so the boot file stops updating · no code behind it
+}
+
+core: Core {
+  direction: down
+
+  fetch: `requests.get` on the raw bootupdate.js URL from BangleApps master · unpinned, so today it reads whatever upstream has now
+  parse: `esprima.parseScript(text, delegate=visitor)` · the delegate walks the tree during parsing and counts
+  visit: `visitor.visit(syntaxTree)` walks the same tree a second time · the result is printed, and `NodeVisitor.visit` returns None
+  count: `bootCount` is a module-level global incremented on every `boot += ...` assignment expression
+}
+
+state: State {
+  direction: down
+
+  counter: `bootCount` · in RAM, starts at 0, doubled by the second walk {shape: cylinder}
+  out: stdout only · a count and a None, nothing saved, nothing compared {shape: cylinder}
+}
+
+ext: External {
+  direction: down
+
+  github: `raw.githubusercontent.com/espruino/BangleApps/master/apps/boot/bootupdate.js` · the file that owns the boot loader
+  deps: `requests` and `esprima` · no requirements.txt, no pin, so the esprima delegate API is whatever pip installs
+}
+
+entry -> core: one run
+core -> state: a count
+core -> ext: one HTTP GET
+
+classes: {
+  entry: {style: {stroke: "#2f6fbf"}}
+  core: {style: {stroke: "#2f8f5f"}}
+  state: {style: {stroke: "#a86a12"; stroke-dash: 3}}
+  ext: {style: {stroke: "#8a4fbf"; stroke-dash: 5}}
+}
+
+entry.class: entry
+core.class: core
+state.class: state
+ext.class: ext
